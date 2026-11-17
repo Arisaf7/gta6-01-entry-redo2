@@ -330,8 +330,16 @@ export function createWorld(random, save) {
             other.y += ny * push;
           }
           if (Math.abs(car.speed) > 200) {
-            car.health -= 8;
-            if (other.health !== undefined) other.health -= 8;
+            // Damage at most once per half second per car: two cars
+            // grinding together must not destroy each other in one scrape.
+            if (state.elapsed - (car.lastHitAt ?? -100) > 0.5) {
+              car.lastHitAt = state.elapsed;
+              car.health -= 8;
+            }
+            if (other.health !== undefined && state.elapsed - (other.lastHitAt ?? -100) > 0.5) {
+              other.lastHitAt = state.elapsed;
+              other.health -= 8;
+            }
             audio.crash();
             state.shake = 0.3;
             if (car.health <= 0) {

@@ -12,7 +12,7 @@ export function createPlayer(city) {
     x: 225, y: 295, angle: -Math.PI / 2, speed: 0,
     onFoot: true, car: null, health: PLAYER.health,
     money: 0, shootCooldown: 0, punchCooldown: 0,
-    lastDamageAt: -100, invulnerable: 0,
+    lastDamageAt: -100, invulnerable: 0, lastCrashAt: -100,
   };
 
   function reset(x, y, money) {
@@ -28,6 +28,7 @@ export function createPlayer(city) {
     player.punchCooldown = 0;
     player.lastDamageAt = -100;
     player.invulnerable = 0;
+    player.lastCrashAt = -100;
   }
 
   function nearestCar(cars, maxDist) {
@@ -102,7 +103,10 @@ export function createPlayer(city) {
       car.y += Math.sin(car.angle) * car.speed * dt;
       const fixed = city.collideCircle(car.x, car.y, 20);
       if (fixed.hit) {
-        if (Math.abs(car.speed) > 240) {
+        // One crash per scrape, not one per step: sliding along a wall at
+        // speed must not melt the car in under a second.
+        if (Math.abs(car.speed) > 240 && elapsed - player.lastCrashAt > 0.6) {
+          player.lastCrashAt = elapsed;
           events.push({ type: 'crash', x: car.x, y: car.y, speed: Math.abs(car.speed) });
         }
         car.x = fixed.x;
